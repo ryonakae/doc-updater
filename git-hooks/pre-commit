@@ -45,10 +45,14 @@ echo "[doc-updater] コード変更を検出しました。ドキュメントの
 STAGED_LIST=$(echo "$STAGED_FILES" | tr '\n' ', ' | sed 's/,$//')
 
 export DOC_UPDATER_RUNNING=1
-claude --agent doc-updater \
-  -p "git pre-commitフックから呼び出されています。ステージされたファイル: ${STAGED_LIST}。git diff --cached の内容を確認し、必要に応じてドキュメントを更新してください。更新した場合は git add で更新ファイルをステージしてください。" \
-  --allowedTools 'Read,Write,Edit,Bash(git diff*),Bash(git add*),Grep,Glob' \
-  2>&1 | tail -5
+if [ -z "${CLAUDECODE:-}" ]; then
+  claude --agent doc-updater \
+    -p "git pre-commitフックから呼び出されています。ステージされたファイル: ${STAGED_LIST}。git diff --cached の内容を確認し、必要に応じてドキュメントを更新してください。更新した場合は git add で更新ファイルをステージしてください。" \
+    --allowedTools 'Read,Write,Edit,Bash(git diff*),Bash(git add*),Grep,Glob' \
+    2>&1 | tail -5
+else
+  echo "[doc-updater] Claude Code セッション内での実行のため、ドキュメント更新はスキップします。"
+fi
 
 echo "[doc-updater] ドキュメント確認完了。"
 
