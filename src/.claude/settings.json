@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "以下のJSONを確認してください。\n\n$ARGUMENTS\n\n【ルール】\n1. stop_hook_activeがtrueの場合: 必ず{\"ok\": true}を返してください（ループ防止）\n2. stop_hook_activeがfalseの場合のみ、last_assistant_messageを判定してください\n\n【判定基準】last_assistant_messageが、プロジェクト構成に影響する作業の完了報告かどうか。\n対象: コードファイル（.ts .tsx .js .jsx .py .swift .kt 等）の実装・修正・リファクタリング、依存関係ファイルの変更（package.json requirements.txt 等）、ファイルのリネームや削除、ビルド・スクリプトの変更（Makefile justfile 等）、開発環境設定の変更（docker-compose.yml tsconfig.json .env.example 等）\n非対象: 質問への回答、計画・設計の提示、調査報告、ドキュメントのみの変更、テストのみの実行、会話的なやり取り\n\n【応答】JSONのみで返してください:\n- 実装完了報告の場合: {\"ok\": false, \"reason\": \"実装完了を検出しました。次のBashコマンドをバックグラウンド実行してから停止してください: claude --agent doc-updater --model haiku -p '実装が完了しました。git diff HEAD で変更内容を確認し、必要に応じてドキュメントを更新してください。' &\"}\n- それ以外: {\"ok\": true}"
+            "prompt": "以下のJSONを確認してください。\n\n$ARGUMENTS\n\n【ルール】\n1. stop_hook_activeがtrueの場合: 必ず{\"ok\": true}を返してください（ループ防止）\n2. stop_hook_activeがfalseの場合のみ、last_assistant_messageを判定してください\n\n【判定基準】last_assistant_messageが、プロジェクト構成に影響する作業の完了報告かどうか。\n対象: コードファイル（.ts .tsx .js .jsx .py .swift .kt 等）の実装・修正・リファクタリング、依存関係ファイルの変更（package.json requirements.txt 等）、ファイルのリネームや削除、ビルド・スクリプトの変更（Makefile justfile 等）、開発環境設定の変更（docker-compose.yml tsconfig.json .env.example 等）\n非対象: 質問への回答、計画・設計の提示、調査報告、ドキュメントのみの変更、テストのみの実行、会話的なやり取り\n\n【応答】JSONのみで返してください:\n- 実装完了報告の場合: {\"ok\": false, \"reason\": \"実装完了を検出しました。doc-updater サブエージェント（モデルは haiku）に『git diff HEAD で変更内容を確認し、必要に応じてドキュメントを更新してください。』と依頼してから停止してください。\"}\n- それ以外: {\"ok\": true}"
           }
         ]
       }
