@@ -25,7 +25,15 @@ git-hooks/
 | Claude Code Stopフック | エージェントによる実装完了時 | Claudeが実装完了を報告するたび（自動） |
 | git pre-commitフック | 人間の手動コミット / エージェントコードの修正後コミット | `git commit` 実行時（自動） |
 | `/reflecting-session` | セッション中の失敗・試行錯誤からの学習 | セッション終了前に手動で実行 |
+### 検出対象の変更
 
+doc-updaterは以下の変更を検出し、ドキュメントへの反映が必要か判断します:
+
+- **コード変更**: 機能追加、API変更、エージェント・スキル・フックの変更
+- **依存関係の変更**: package.json, requirements.txt, Cargo.toml 等のライブラリ追加・削除・変更
+- **ファイルのリネーム・削除**: ドキュメント内のパス参照を自動更新・除去
+- **コマンド・スクリプトの変更**: Makefile, justfile, npm scripts 等のビルド・テスト・実行コマンド変更
+- **設定ファイルの変更**: .env.example, docker-compose.yml, tsconfig.json 等の開発環境設定
 これにより以下のすべてのケースに対応できます:
 - Claude Codeが実装を完了した場合
 - 人間が手でコードを書いてコミットする場合

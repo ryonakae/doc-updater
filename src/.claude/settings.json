@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Claudeの直前の応答が、プロジェクト構成に影響する作業の完了報告かどうか判定してください。対象となる作業: コードファイル（.ts, .tsx, .js, .jsx, .py, .swift, .kt 等）の実装・修正・リファクタリング、依存関係ファイルの変更（package.json, requirements.txt 等）、ファイルのリネームや削除、ビルド・コマンドやスクリプトの変更（Makefile, justfile 等）、開発環境設定の変更（docker-compose.yml, tsconfig.json, .env.example 等）。以下はyesではありません: 質問への回答、計画や設計の提示、調査報告、ドキュメントのみの変更、テストのみの実行、会話的なやり取り。上記の作業が完了してユーザーに報告している場合のみyesとしてください。"
+          },
+          {
+            "type": "command",
+            "command": "if [ -z \"$DOC_UPDATER_RUNNING\" ]; then export DOC_UPDATER_RUNNING=1; claude --agent doc-updater -p 'Claude Codeによる実装が完了しました。git diff HEAD で変更内容を確認し、必要に応じてドキュメントを更新してください。' & fi"
+          }
+        ]
+      }
+    ]
+  }
+}
