@@ -106,7 +106,7 @@ doc-updater.md 内の記述規約セクションはテンプレートです。
 プロジェクトのドキュメント構造に合わせてカスタマイズしてください:
 
 - README.mdのセクション構成
-- CLAUDE.md / AGENTS.mdの既存構造
+- AGENTS.md / CLAUDE.mdの既存構造
 - docs/ 配下のドキュメント体系
 
 ## 注意点
