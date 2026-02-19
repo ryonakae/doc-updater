@@ -11,9 +11,6 @@
 
 set -euo pipefail
 
-# --- 設定 ---
-DOC_EXTENSIONS='\.md$|\.txt$|\.rst$'
-
 # doc-updaterが自身を再帰的に呼ばないためのガード
 if [ "${DOC_UPDATER_RUNNING:-}" = "1" ]; then
   exit 0
@@ -23,13 +20,6 @@ fi
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMRD 2>/dev/null || true)
 
 if [ -z "$STAGED_FILES" ]; then
-  exit 0
-fi
-
-# ドキュメント以外のファイルが含まれているか確認
-CODE_FILES=$(echo "$STAGED_FILES" | grep -vE "$DOC_EXTENSIONS" || true)
-
-if [ -z "$CODE_FILES" ]; then
   exit 0
 fi
 
