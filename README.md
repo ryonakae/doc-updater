@@ -9,9 +9,6 @@
 .claude/
 ├── agents/
 │   └── doc-updater.md                  # ドキュメント更新サブエージェント
-├── skills/
-│   └── reflecting-session/
-│       └── SKILL.md                    # セッションの学びをドキュメントに反映
 └── settings.json                       # Stopフック（prompt型ゲート付き）
 
 git-hooks/
@@ -22,9 +19,8 @@ git-hooks/
 
 | トリガー | 対象 | タイミング |
 |----------|------|-----------|
-| Claude Code Stopフック | エージェントによる実装完了時 | Claudeが実装完了を報告するたび（自動） |
+| Claude Code Stopフック | エージェントによる実装完了時 + セッション中の失敗・試行錯誤からの学習 | Claudeが実装完了を報告するたび（自動） |
 | git pre-commitフック | 人間の手動コミット / エージェントコードの修正後コミット | `git commit` 実行時（自動） |
-| `/reflecting-session` | セッション中の失敗・試行錯誤からの学習 | セッション終了前に手動で実行 |
 
 ### 検出対象の変更
 
@@ -37,14 +33,41 @@ doc-updaterは以下の変更を検出し、ドキュメントへの反映が必
 - **設定ファイルの変更**: .env.example, docker-compose.yml, tsconfig.json 等の開発環境設定
 
 これにより以下のすべてのケースに対応できます:
-- Claude Codeが実装を完了した場合
+- Claude Codeが実装を完了した場合（コード変更の反映 + セッション中の失敗・試行錯誤の学習）
 - 人間が手でコードを書いてコミットする場合
 - エージェント生成コードを人間が修正してからコミットする場合
-- セッション中の失敗・試行錯誤を次回以降に活かしたい場合
 
 ## 処理の流れ
 
-### Stopフック / git pre-commit（コード変更 → ドキュメント更新）
+### Stopフック（実装完了 → セッション振り返り + ドキュメント更新）
+
+```
+メインClaude が実装完了を報告 → 停止しようとする
+    │
+    ▼
+Stop フック（prompt型ゲート）が判定
+    │
+    ├─ 実装完了でない場合 → そのまま停止
+    └─ 実装完了の場合 → {ok: false} で続行指示
+           │
+           ▼
+       メインClaude（セッション履歴が見える）
+           │
+           ├─ 1. セッション振り返り
+           │     失敗・修正・試行錯誤があれば
+           │     .claude/reflections.md に書き出し
+           │
+           ├─ 2. doc-updater サブエージェント呼び出し（完了を待つ）
+           │     ├─ エージェント指示ファイルの構成を検出
+           │     ├─ git diff で変更内容を分析
+           │     ├─ 必要に応じてドキュメントを更新
+           │     ├─ reflections.md があれば防止策を反映し削除
+           │     └─ サマリーを返す
+           │
+           └─ 3. 停止
+```
+
+### git pre-commit（コード変更 → ドキュメント更新）
 
 ```
 ステージされたファイルの変更を検出
@@ -53,27 +76,10 @@ doc-updaterは以下の変更を検出し、ドキュメントへの反映が必
 doc-updater サブエージェント（別コンテキスト）
     │
     ├─ エージェント指示ファイルの構成を検出（実ファイル / symlink）
-    ├─ git diff で変更内容を分析
+    ├─ git diff --cached で変更内容を分析
     ├─ 影響判定（ドキュメント更新が必要か LLM が判断）
     ├─ 必要に応じてドキュメントを更新
     └─ サマリーを返す
-```
-
-### /reflecting-session（セッションの学び → ドキュメント更新）
-
-```
-ユーザーが /reflecting-session を実行
-    │
-    ▼
-メインのClaude（セッション履歴が見える）
-    │
-    ├─ 失敗パターン・根本原因・防止策を分析
-    ├─ .claude/reflections.md に書き出し
-    └─ doc-updater サブエージェントに委譲
-           │
-           ├─ reflections.md を読む
-           ├─ 防止策をエージェント指示ファイルに反映
-           └─ reflections.md を削除
 ```
 
 ## セットアップ
@@ -92,15 +98,7 @@ cp git-hooks/pre-commit /path/to/your-project/.git/hooks/pre-commit
 chmod +x /path/to/your-project/.git/hooks/pre-commit
 ```
 
-### 3. CLAUDE.mdに追記（推奨）
-
-`/reflecting-session` の呼び忘れを防ぐために:
-
-```markdown
-- セッション中に失敗や修正指示があった場合、セッション終了前に /reflecting-session の実行を提案する
-```
-
-### 4. プロジェクト固有の調整
+### 3. プロジェクト固有の調整
 
 doc-updater.md 内の記述規約セクションはテンプレートです。
 プロジェクトのドキュメント構造に合わせてカスタマイズしてください:
@@ -116,4 +114,3 @@ doc-updater.md 内の記述規約セクションはテンプレートです。
 - **pre-commitの実行時間**: claude CLIの起動＋分析で数十秒かかります。
   `--no-verify` でスキップ可能です。
 - **再帰防止**: 環境変数 `DOC_UPDATER_RUNNING` でガードしています。
-- **/reflecting-session は手動**: セッション履歴が必要なため自動化はできません。
