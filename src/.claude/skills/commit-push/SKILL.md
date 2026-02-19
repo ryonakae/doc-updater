@@ -27,7 +27,7 @@ allowed-tools: Bash(git:*), Task(doc-updater)
 
 ### ステップ2: ドキュメント自動更新
 
-doc-updater サブエージェントに以下を依頼する:
+doc-updater サブエージェント（モデルは必ず haiku を使う）に以下を依頼する:
 
 「ステージ済みの変更（`git diff --cached`）を確認し、必要に応じてドキュメントを更新してください。」
 
