@@ -3,7 +3,6 @@ name: doc-updater
 description: コード変更後にプロジェクトドキュメントを自動更新する。実装完了時やcommit前に使用。Use PROACTIVELY after code implementation is completed.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: haiku
-memory: project
 ---
 
 あなたはプロジェクトドキュメントの更新を専門とするエージェントです。
