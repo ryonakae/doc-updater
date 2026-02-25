@@ -5,7 +5,8 @@
         "hooks": [
           {
             "type": "agent",
-            "prompt": "以下の入力を分析し、Claudeが停止してよいか判定してください。\n\n$ARGUMENTS\n\n判定手順:\n1. stop_hook_active が true → StructuredOutput で ok=true を返す\n2. last_assistant_message を確認し、コード変更（ファイル作成・編集・削除）が行われたか判定する。「変更しました」等の短い返答もコード変更に該当する。判断できない場合は `git diff HEAD --name-only` で確認する\n3. コード変更あり → StructuredOutput で ok=false、reason に「doc-updater サブエージェント（モデルは haiku）をフォアグラウンドで実行し、変更ファイルを渡してドキュメント更新を依頼してください。セッション中の失敗・修正からの防止策があればそれも含めてください。」を設定\n4. コード変更なし → StructuredOutput で ok=true を返す\n\n必ず StructuredOutput ツールを使って結果を返してください。",
+            "model": "claude-sonnet-4-6",
+            "prompt": "以下の入力を分析し、Claudeが停止してよいか判定してください。\n\n$ARGUMENTS\n\n判定手順:\n1. stop_hook_active が true → StructuredOutput で ok=true を返す\n2. last_assistant_message のみを確認する（transcript_path のファイルは大きすぎるため絶対に読まないこと）。コード変更（ファイル作成・編集・削除）が行われたか判定する。「変更しました」等の短い返答もコード変更に該当する。判断できない場合は `git diff HEAD --name-only` で確認する\n3. コード変更あり → StructuredOutput で ok=false、reason に「doc-updater サブエージェント（モデルは haiku）をフォアグラウンドで実行し、変更ファイルを渡してドキュメント更新を依頼してください。セッション中の失敗・修正からの防止策があればそれも含めてください。」を設定\n4. コード変更なし → StructuredOutput で ok=true を返す\n\n必ず StructuredOutput ツールを使って結果を返してください。",
             "timeout": 180
           }
         ]

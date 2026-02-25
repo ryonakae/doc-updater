@@ -28,7 +28,7 @@ doc-updater/                              # リポジトリルート
 
 - Claude Code（Hooks / Sub-agents / Skills）
 - シェルスクリプト（`src/git-hooks/pre-commit`）
-- LLMモデル: haiku（コスト最適化）
+- LLMモデル: claude-sonnet-4-6（Stopフック判定用）、haiku（doc-updater用）
 
 ## 設計方針
 
@@ -45,9 +45,9 @@ doc-updater/                              # リポジトリルート
 
 Stopフック判定にLLMエージェントを使い、会話的なやり取りや調査報告では発火しない。セッション履歴を参照してコード変更の有無を判定し、実装完了のみ続行指示を出す。タイムアウトは180秒で設定。
 
-### haiku使用
+### モデル選定
 
-ドキュメント更新は「差分の分析 + 必要最小限の編集」であり高度な推論は不要なため、Stopフック判定・doc-updaterサブエージェントの両方でhaikuを使いコストを最小化する。
+Stopフック判定には claude-sonnet-4-6 を使い、セッション履歴の分析精度を確保する。doc-updater サブエージェントは「差分の分析 + 必要最小限の編集」であり高度な推論は不要なため haiku を使い、コストを最小化する。
 
 ### symlink戦略
 
