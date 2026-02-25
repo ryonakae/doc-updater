@@ -16,7 +16,7 @@ doc-updater/                              # リポジトリルート
     ├── .claude/
     │   ├── agents/
     │   │   └── doc-updater.md            # ドキュメント更新サブエージェント
-    │   ├── settings.json                 # Stopフック（prompt型ゲート付き）
+    │   ├── settings.json                 # Stopフック（agent型ゲート付き）
     │   └── skills/
     │       └── commit-push/
     │           └── SKILL.md              # コミット&pushスキル
@@ -106,7 +106,7 @@ doc-updaterは以下の変更を検出し、ドキュメントへの反映が必
 メインClaude が実装完了を報告 → 停止しようとする
     │
     ▼
-Stop フック（prompt型ゲート）が判定
+Stop フック（agent型ゲート）が判定
     │
     ├─ 実装完了でない場合 → そのまま停止
     └─ 実装完了の場合 → {ok: false} で続行指示
