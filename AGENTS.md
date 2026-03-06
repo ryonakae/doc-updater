@@ -13,6 +13,12 @@ doc-updater/                              # リポジトリルート
 ├── GEMINI.md -> AGENTS.md                # symlink
 ├── README.md -> AGENTS.md                # symlink
 └── src/                                  # 配布用ファイル群（他プロジェクトに導入する）
+    ├── .agents/
+    │   └── skills/
+    │       └── commit-push/
+    │           ├── SKILL.md              # 汎用エージェント向けコミット&pushスキル
+    │           └── references/
+    │               └── doc-updater.md    # commit前に同一エージェントが使うdoc-updater手順
     ├── .claude/
     │   ├── agents/
     │   │   └── doc-updater.md            # ドキュメント更新サブエージェント
@@ -26,6 +32,7 @@ doc-updater/                              # リポジトリルート
 
 ### テックスタック
 
+- 汎用 AI エージェント向け Skills（`src/.agents/skills`）
 - Claude Code（Hooks / Sub-agents / Skills）
 - シェルスクリプト（`src/git-hooks/pre-commit`）
 - LLMモデル: claude-sonnet-4-6（Stopフック判定用）、sonnet（doc-updater用）
@@ -88,9 +95,11 @@ ls -la CLAUDE.md GEMINI.md README.md
 
 | ファイル | 役割 |
 |---------|------|
+| `src/.agents/skills/commit-push/SKILL.md` | 汎用エージェント向け。Conventional Commitsメッセージ自動生成 + inline doc-updater + push |
+| `src/.agents/skills/commit-push/references/doc-updater.md` | `git diff --cached` ベースで使う commit前ドキュメント更新手順 |
 | `src/.claude/agents/doc-updater.md` | doc-updaterサブエージェントの定義。記述規約の詳細を含む |
 | `src/.claude/settings.json` | Stopフック設定。変更後は `jq .` でバリデーション |
-| `src/.claude/skills/commit-push/SKILL.md` | Conventional Commitsメッセージ自動生成 + doc-updater連携スキル |
+| `src/.claude/skills/commit-push/SKILL.md` | Claude Code向け。Conventional Commitsメッセージ自動生成 + doc-updaterサブエージェント連携 |
 | `src/git-hooks/pre-commit` | bashスクリプト。変更後は `bash -n` で構文チェック |
 
 ## トリガーの使い分け
@@ -155,9 +164,12 @@ doc-updater サブエージェント（別コンテキスト）
 ### 1. ファイルを配置
 
 ```bash
+cp -r src/.agents/skills/ /path/to/your-project/.agents/skills/
 cp -r src/.claude/ /path/to/your-project/.claude/
 # 既存の .claude/settings.json がある場合は hooks セクションだけマージ
 ```
+
+`.agents/skills/commit-push` は Codex や Gemini CLI など、サブエージェントが使えない環境向け。`SKILL.md` と `references/doc-updater.md` を同じ相対パスで配置する。
 
 ### 2. git pre-commitフックを設定
 
@@ -168,7 +180,7 @@ chmod +x /path/to/your-project/.git/hooks/pre-commit
 
 ### 3. プロジェクト固有の調整
 
-`src/.claude/agents/doc-updater.md` 内の記述規約セクションはテンプレート。プロジェクトのドキュメント構造に合わせてカスタマイズする:
+`src/.claude/agents/doc-updater.md` と `src/.agents/skills/commit-push/references/doc-updater.md` の記述規約セクションはテンプレート。プロジェクトのドキュメント構造に合わせてカスタマイズする:
 
 - README.mdのセクション構成
 - AGENTS.md / CLAUDE.mdの既存構造
