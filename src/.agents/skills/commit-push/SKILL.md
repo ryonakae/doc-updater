@@ -42,8 +42,8 @@ description: Conventional Commits メッセージを自動生成し、`git diff 
    - body は必要な場合のみ付ける
 2. `git diff --cached --name-only --diff-filter=ACMRD` を再確認し、差分が無ければ終了する
 3. 生成したメッセージでコミットし、現在のブランチを push する
-   - body がある場合: `git commit -m "<type>(<scope>): <subject>" -m "<body>"`
-   - body が無い場合: `git commit -m "<type>(<scope>): <subject>"`
+   - body がある場合: `SKIP_DOC_UPDATER=1 git commit -m "<type>(<scope>): <subject>" -m "<body>"`
+   - body が無い場合: `SKIP_DOC_UPDATER=1 git commit -m "<type>(<scope>): <subject>"`
    - `git push`
 
 ## 注意

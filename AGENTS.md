@@ -200,4 +200,4 @@ chmod +x /path/to/your-project/.git/hooks/pre-commit
 - **Stopフックのコスト**: LLM判定ゲートは毎回LLM呼び出しが発生する。コストが気になる場合はgit pre-commitフックのみの運用も可能
 - **Stopフックのタイムアウト**: 180秒に設定。セッション履歴が大きい場合は調整が必要
 - **pre-commitの実行時間**: claude CLIの起動＋分析で数十秒かかる。`--no-verify` でスキップ可能
-- **再帰防止**: 環境変数 `DOC_UPDATER_RUNNING` でガードしている
+- **再帰防止**: 環境変数 `SKIP_DOC_UPDATER` でガードしている
