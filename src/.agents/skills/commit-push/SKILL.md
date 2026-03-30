@@ -3,18 +3,23 @@ name: commit-push
 description: Conventional Commits メッセージを自動生成し、doc-updater によるドキュメント自動更新を含めてコミットと push を行うスキル。コミットしたい時、pushしたい時、ドキュメント更新込みでコミットしたい時に使用する。
 ---
 
-# コミットメッセージ自動生成 & push
+# commit-push
 
 ## 概要
 
-ステージング済みの変更から Conventional Commits メッセージを作り、必要ならドキュメントも更新してからコミットと push を行う。
+ステージング済みの変更から Conventional Commits メッセージを作り、必要ならドキュメントも更新してからコミットと push を行う。本文は orchestration だけを持ち、詳細ルールは必要なタイミングで supporting file を読む。
 
 ## 要件
 
 - 返答とコミットメッセージは日本語
 - 敬語は使わない
 - Conventional Commits 形式にする
-- コミットメッセージ本文の末尾に `Co-Authored-By: Codex <noreply@openai.com>` を追加する
+- 破壊的な操作（`reset` `clean` `rebase` `push --force` など）はしない
+
+## supporting files
+
+- コミットメッセージ profile 一覧: [`references/commit-message-profiles.md`](references/commit-message-profiles.md)
+- ドキュメント更新 workflow: [`references/doc-updater-workflow.md`](references/doc-updater-workflow.md)
 
 ## 手順
 
@@ -28,30 +33,47 @@ description: Conventional Commits メッセージを自動生成し、doc-update
 
 ### ステップ2: ドキュメント自動更新
 
-1. このセッション内で既に `doc-updater` を実行した、または更新不要と判断済みならこのステップをスキップする
-2. スキップしない場合は `doc-updater` サブエージェントに以下を依頼する
-
-   「ステージ済みの変更（`git diff --cached`）を確認し、必要に応じてドキュメントを更新してください。」
-
-3. `doc-updater` がファイルを変更した場合は、変更したファイルを `git add` でステージングに追加する
-4. 更新不要なら「ドキュメント更新は不要」と判断して次に進む
+1. このセッション内で既にドキュメント更新を実行した、または更新不要と判断済みならこのステップをスキップする
+2. ドキュメントファイル（`AGENTS.md` `CLAUDE.md` `GEMINI.md` `README.md` `docs/**/*.md` など）がすでにステージされている場合は、今回の変更で追加の更新が必要かだけ確認し、不要ならこのステップをスキップする
+3. スキップしない場合は、最初に [`references/doc-updater-workflow.md`](references/doc-updater-workflow.md) を読む
+4. 現在の実行環境でサブエージェントを 1 つ起動でき、かつその機能がこのセッションで利用可能だと確信できる場合は、doc-updater フェーズだけをそのサブエージェントに実行させる
+   - ここでいうサブエージェントには、名称が異なっていても独立したコンテキストと専用指示を持つ同等機能を含む
+   - サブエージェントには、workflow を最初に読むことを伝える
+   - 対象は `git diff --cached` だけに限定する
+   - staged file list と rename/delete context を渡す
+   - ドキュメントを更新したら `git add` でステージングするよう指示する
+   - 完了後に、更新内容または更新不要の判断を簡潔に返すよう指示する
+5. サブエージェント機能が使えない、または利用可能性を確信できない場合は、メインエージェントが同じ workflow を自分で実行する
+6. 更新不要なら「ドキュメント更新は不要」と判断して次に進む
 
 ### ステップ3: コミットメッセージ生成 & push
 
-1. `git diff --cached` で最終的なステージング済み差分を確認し、Conventional Commits のコミットメッセージを1つ作る
+1. runtime を次の順で判定する
+   - `CLAUDECODE=1` なら `claude-code` profile を選ぶ
+   - `GEMINI_CLI=1` なら `gemini-cli` profile を選ぶ
+   - それ以外は unknown runtime として扱う
+2. unknown runtime の場合は、自分の実行環境を自分で確信を持って識別できるなら対応する profile を選ぶ。確信できない場合は `generic-fallback` を選ぶ
+3. [`references/commit-message-profiles.md`](references/commit-message-profiles.md) を読み、以下の優先順位で profile を 1 つ選ぶ
+   - env marker で確定できる profile
+   - 実行中エージェントが自分の runtime identity から確信を持てる profile
+   - `generic-fallback`
+4. `git diff --cached` で最終的なステージング済み差分を確認し、Conventional Commits のコミットメッセージを 1 つ作る
    - 形式: `<type>(<scope>): <subject>`
    - type は `feat|fix|docs|refactor|perf|test|build|ci|chore` から選ぶ
    - scope は分かる場合のみ付ける。不明なら省略する
    - subject は短く要点のみ。末尾に句点は付けない
    - body は必要な場合のみ付ける
-   - 本文末尾に `Co-Authored-By: Codex <noreply@openai.com>` を付ける
-2. `git diff --cached --name-only --diff-filter=ACMRD` を再確認し、差分が無ければ終了する
-3. 生成したメッセージでコミットし、現在のブランチを push する
-   - body がある場合: `SKIP_DOC_UPDATER=1 git commit -m "<type>(<scope>): <subject>" -m "<body>" -m "<Co-Authored-By 行>"`
-   - body が無い場合: `SKIP_DOC_UPDATER=1 git commit -m "<type>(<scope>): <subject>" -m "<Co-Authored-By 行>"`
+   - 選んだ profile の `commit trailer` が `なし` なら trailer を付けない
+   - 選んだ profile に `subject/body 追加ルール` があればそれに従う
+5. `git diff --cached --name-only --diff-filter=ACMRD` を再確認し、差分が無ければ終了する
+6. 生成したメッセージでコミットし、現在のブランチを push する
+   - body と trailer がある場合: `SKIP_DOC_UPDATER=1 git commit -m "<type>(<scope>): <subject>" -m "<body>" -m "<trailer>"`
+   - trailer だけある場合: `SKIP_DOC_UPDATER=1 git commit -m "<type>(<scope>): <subject>" -m "<trailer>"`
+   - trailer がなく body だけある場合: `SKIP_DOC_UPDATER=1 git commit -m "<type>(<scope>): <subject>" -m "<body>"`
+   - trailer も body も無い場合: `SKIP_DOC_UPDATER=1 git commit -m "<type>(<scope>): <subject>"`
    - `git push`
 
 ## 注意
 
-- 破壊的な操作（`reset` `clean` `rebase` `push --force` など）はしない
+- unknown runtime では、コミットメッセージに実行環境の固有名詞を勝手に入れない
 - push が失敗したら、エラー要点と次のアクション候補だけを伝えて終了する
