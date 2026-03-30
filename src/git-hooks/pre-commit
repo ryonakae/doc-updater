@@ -1,7 +1,7 @@
 #!/bin/bash
 # .git/hooks/pre-commit
 # 人間の手動コミットやエージェント生成コードの修正後コミット時に
-# 共有 doc-updater workflow を使ってドキュメントの自動更新を行う git pre-commit フックスクリプト
+# doc-updater skill を参照してドキュメントの自動更新を行う git pre-commit フックスクリプト
 #
 # セットアップ:
 #   cp git-hooks/pre-commit .git/hooks/pre-commit
@@ -25,10 +25,10 @@ if ! command -v claude &> /dev/null; then
 fi
 
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-WORKFLOW_PATH="${REPO_ROOT}/.agents/skills/commit-push/references/doc-updater-workflow.md"
+DOC_UPDATER_SKILL="${REPO_ROOT}/.agents/skills/doc-updater/SKILL.md"
 
-if [ ! -f "$WORKFLOW_PATH" ]; then
-  echo "[doc-updater] ${WORKFLOW_PATH} が見つかりません。ドキュメント更新をスキップします。"
+if [ ! -f "$DOC_UPDATER_SKILL" ]; then
+  echo "[doc-updater] ${DOC_UPDATER_SKILL} が見つかりません。ドキュメント更新をスキップします。"
   exit 0
 fi
 
@@ -39,8 +39,8 @@ if [ -z "$STAGED_FILES" ]; then
   exit 0
 fi
 
-# --- 共有 doc-updater workflow の実行 ---
-echo "[doc-updater] コード変更を検出しました。共有 workflow でドキュメントの更新を確認中..."
+# --- doc-updater skill 手順の実行 ---
+echo "[doc-updater] コード変更を検出しました。doc-updater 手順でドキュメントの更新を確認中..."
 
 STAGED_LIST=$(echo "$STAGED_FILES" | tr '\n' ', ' | sed 's/,$//')
 
@@ -58,7 +58,7 @@ fi
 
 export SKIP_DOC_UPDATER=1
 claude --model haiku \
-  -p "git pre-commitフックから呼び出されています。最初に ${WORKFLOW_PATH} を読み、その workflow に従って git diff --cached の内容を確認し、必要に応じてドキュメントを更新してください。ステージされたファイル: ${STAGED_LIST}。${RENAME_CTX}リネーム・削除がある場合はドキュメント内のパス参照も更新してください。更新した場合は git add で更新ファイルをステージしてください。" \
+  -p "git pre-commitフックから呼び出されています。最初に ${DOC_UPDATER_SKILL} を読み、その手順に従って git diff --cached の内容を確認し、必要に応じてドキュメントを更新してください。対象は git diff --cached だけです。ステージされたファイル: ${STAGED_LIST}。${RENAME_CTX}リネーム・削除がある場合はドキュメント内のパス参照も更新してください。更新した場合は git add で更新ファイルをステージしてください。" \
   --allowedTools 'Read,Write,Edit,Bash(git diff*),Bash(git add*),Bash(find *),Bash(head *),Bash(wc *),Bash(ls *),Grep,Glob' \
   2>&1 | tail -5
 

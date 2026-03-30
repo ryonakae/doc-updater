@@ -1,6 +1,6 @@
 ---
 name: commit-push
-description: Conventional Commits メッセージを自動生成し、doc-updater によるドキュメント自動更新を含めてコミットと push を行うスキル。コミットしたい時、pushしたい時、ドキュメント更新込みでコミットしたい時に使用する。
+description: Conventional Commits メッセージを自動生成し、必要なら doc-updater skill を呼び出してからコミットと push を行うスキル。コミットしたい時、pushしたい時、ドキュメント更新込みでコミットしたい時に使用する。
 ---
 
 # commit-push
@@ -19,7 +19,7 @@ description: Conventional Commits メッセージを自動生成し、doc-update
 ## supporting files
 
 - コミットメッセージ profile 一覧: [`references/commit-message-profiles.md`](references/commit-message-profiles.md)
-- ドキュメント更新 workflow: [`references/doc-updater-workflow.md`](references/doc-updater-workflow.md)
+- doc-updater skill 本体: [`../doc-updater/SKILL.md`](../doc-updater/SKILL.md)
 
 ## 手順
 
@@ -35,16 +35,14 @@ description: Conventional Commits メッセージを自動生成し、doc-update
 
 1. このセッション内で既にドキュメント更新を実行した、または更新不要と判断済みならこのステップをスキップする
 2. ドキュメントファイル（`AGENTS.md` `CLAUDE.md` `GEMINI.md` `README.md` `docs/**/*.md` など）がすでにステージされている場合は、今回の変更で追加の更新が必要かだけ確認し、不要ならこのステップをスキップする
-3. スキップしない場合は、最初に [`references/doc-updater-workflow.md`](references/doc-updater-workflow.md) を読む
-4. 現在の実行環境でサブエージェントを 1 つ起動でき、かつその機能がこのセッションで利用可能だと確信できる場合は、doc-updater フェーズだけをそのサブエージェントに実行させる
-   - ここでいうサブエージェントには、名称が異なっていても独立したコンテキストと専用指示を持つ同等機能を含む
-   - サブエージェントには、workflow を最初に読むことを伝える
+3. スキップしない場合は、最初に [`../doc-updater/SKILL.md`](../doc-updater/SKILL.md) を source of truth として扱う
+4. `git diff --cached --name-only --diff-filter=ACMRD` で staged file list を、`git diff --cached --diff-filter=R --name-status` と `git diff --cached --diff-filter=D --name-only` で rename/delete context を収集する
+5. 実行環境が `doc-updater` を別 skill として明示呼び出しできる場合は、それを明示的に呼ぶ
    - 対象は `git diff --cached` だけに限定する
    - staged file list と rename/delete context を渡す
-   - ドキュメントを更新したら `git add` でステージングするよう指示する
-   - 完了後に、更新内容または更新不要の判断を簡潔に返すよう指示する
-5. サブエージェント機能が使えない、または利用可能性を確信できない場合は、メインエージェントが同じ workflow を自分で実行する
-6. 更新不要なら「ドキュメント更新は不要」と判断して次に進む
+   - 呼び出し元に学びや補足文脈があれば、その反映も依頼する
+6. skill の明示呼び出しができない runtime では、`doc-updater` を実行できる仕組みがあればそれを使う。無ければ [`../doc-updater/SKILL.md`](../doc-updater/SKILL.md) を読んで同じ手順を inline で実行する
+7. ドキュメントを更新した場合は `git add` でステージングし、更新不要なら「ドキュメント更新は不要」と判断して次に進む
 
 ### ステップ3: コミットメッセージ生成 & push
 
